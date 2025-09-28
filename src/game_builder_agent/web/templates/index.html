@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game Builder Agent</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <h1>Game Builder Agent</h1>
+      <p>Plan and scaffold Python-powered mobile games with Ollama—now via the web.</p>
+    </header>
+
+    <main>
+      <section id="prompt-section" class="card">
+        <h2>1. Pitch your game</h2>
+        <form id="prompt-form">
+          <label class="field">
+            <span>Describe the game vision</span>
+            <textarea id="prompt-input" required rows="4" placeholder="Create a cozy farming sim with seasonal events..."></textarea>
+          </label>
+          <button type="submit">Generate clarifying questions</button>
+        </form>
+      </section>
+
+      <section id="clarification-section" class="card hidden">
+        <h2>2. Clarify the requirements</h2>
+        <form id="clarification-form">
+          <ol id="clarification-list"></ol>
+          <button type="submit">Create delivery plan</button>
+        </form>
+      </section>
+
+      <section id="plan-section" class="card hidden">
+        <h2>3. Review the delivery plan</h2>
+        <div id="acknowledgement" class="ack hidden"></div>
+        <details open>
+          <summary>Plan summary</summary>
+          <pre id="plan-json" class="code-block"></pre>
+        </details>
+        <div class="actions">
+          <form id="revision-form">
+            <label class="field">
+              <span>Request adjustments (semicolon-separated)</span>
+              <input id="revision-input" type="text" placeholder="Add multiplayer;Expand test coverage" />
+            </label>
+            <button type="submit">Regenerate plan</button>
+          </form>
+          <button id="approve-button" class="primary">Approve plan &amp; scaffold repo</button>
+        </div>
+      </section>
+
+      <section id="result-section" class="card hidden">
+        <h2>4. Repository ready</h2>
+        <p id="result-message"></p>
+      </section>
+    </main>
+
+    <footer>
+      <p class="muted">Generated projects will be written to the configured output directory on the server.</p>
+    </footer>
+
+    <script type="module" src="/static/app.js"></script>
+  </body>
+</html>

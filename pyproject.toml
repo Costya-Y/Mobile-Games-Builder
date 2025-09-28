@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "game-builder-agent"
+version = "0.1.0"
+description = "An Ollama-powered agent that plans and scaffolds Python mobile game projects end-to-end."
+authors = [{ name = "Game Builder Maintainers", email = "dev@example.com" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.9.0",
+    "rich>=13.7.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.7.0",
+    "pyyaml>=6.0.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "jinja2>=3.1.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.1.0",
+    "pytest-httpx>=0.24.0",
+    "ruff>=0.4.0"
+]
+
+[project.scripts]
+game-builder-agent = "game_builder_agent.cli:app"
+game-builder-agent-web = "game_builder_agent.web.server:run"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "W", "C", "N"]
+ignore = ["E203", "E266", "W503"]
