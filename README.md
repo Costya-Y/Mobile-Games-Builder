@@ -45,6 +45,16 @@ You can omit `--prompt` to enter the idea interactively. The agent will:
 
 Set `AGENT_DRY_RUN=1` to skip file generation while reviewing plans.
 
+### Web UI
+
+Spin up the FastAPI web server for a guided browser experience:
+
+```bash
+game-builder-agent-web
+```
+
+Open http://127.0.0.1:8000 to walk through the clarification, planning, and execution steps with a modern UI.
+
 ## Configuration
 
 | Environment Variable   | Description                                      | Default                 |

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Iterable, List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -137,8 +137,8 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
-@app.get("/")
-def home(request: Request) -> JSONResponse:
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
@@ -154,7 +154,10 @@ def create_session(
 
 
 @app.get("/api/sessions/{session_id}", response_model=SessionResponse)
-def read_session(session_id: str, store: SessionStore = Depends(get_session_store)) -> SessionResponse:
+def read_session(
+    session_id: str,
+    store: SessionStore = Depends(get_session_store),
+) -> SessionResponse:
     try:
         session = store.get(session_id)
     except KeyError as exc:  # pragma: no cover - defensive guard
@@ -171,7 +174,10 @@ def submit_answers(
 ) -> SessionResponse:
     session = store.get(session_id)
     if len(payload.answers) != len(session.clarifications):
-        raise HTTPException(status_code=400, detail="Answers must match the number of clarifications")
+        raise HTTPException(
+            status_code=400,
+            detail="Answers must match the number of clarifications",
+        )
 
     session.answered = _answer_questions(session.clarifications, payload.answers)
     session.plan = _generate_plan(
@@ -195,10 +201,16 @@ def request_revision(
 ) -> SessionResponse:
     session = store.get(session_id)
     if not payload.notes:
-        raise HTTPException(status_code=400, detail="Provide at least one note for revision")
+        raise HTTPException(
+            status_code=400,
+            detail="Provide at least one note for revision",
+        )
 
     session.notes.extend(note.strip() for note in payload.notes if note.strip())
-    acknowledgement = _summarize_feedback(settings, session.notes[-len(payload.notes) :])
+    acknowledgement = _summarize_feedback(
+        settings,
+        session.notes[-len(payload.notes) :],
+    )
     session.last_acknowledgement = acknowledgement
     session.plan = _generate_plan(
         settings,

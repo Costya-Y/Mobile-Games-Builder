@@ -11,11 +11,10 @@ from .clarifier import Clarifier
 from .config import Settings
 from .executor import PlanExecutor
 from .feedback import FeedbackSynthesizer
+from .io import ConsoleInteraction, InteractionPort
 from .llm_client import OllamaClient
 from .planner import Planner
 from .presenter import show_plan
-from .schemas import GamePlan
-from .io import ConsoleInteraction, InteractionPort
 
 
 class Orchestrator:

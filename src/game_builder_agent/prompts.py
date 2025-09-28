@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from textwrap import dedent
 
-
 CLARIFICATION_SYSTEM_PROMPT = dedent(
     """
     You are an elite Python game architect specializing in cross-platform mobile titles that target

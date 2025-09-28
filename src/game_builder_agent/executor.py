@@ -18,7 +18,7 @@ from .schemas import FileArtifact, GamePlan, RepoBlueprint
 console = Console()
 
 
-class ExecutionFailure(RuntimeError):
+class ExecutionError(RuntimeError):
     pass
 
 
@@ -37,7 +37,8 @@ class BlueprintBuilder:
             {
                 "role": "user",
                 "content": (
-                    "Incorporate the following operator notes as authoritative overrides if provided.\n"
+                    "Incorporate the following operator notes as authoritative overrides"
+                    " if provided.\n"
                     f"Notes:\n{context_text or 'None'}"
                 ),
             },
@@ -47,7 +48,7 @@ class BlueprintBuilder:
         try:
             payload = json.loads(raw)
         except json.JSONDecodeError as exc:
-            raise ExecutionFailure("LLM blueprint response was not valid JSON") from exc
+            raise ExecutionError("LLM blueprint response was not valid JSON") from exc
 
         return RepoBlueprint.model_validate(payload)
 
@@ -266,7 +267,8 @@ uv pip install --system --no-cache-dir .[dev]
 
 def _generate_readme(plan: GamePlan) -> str:
     implementation_rows = "\n".join(
-        f"- **{milestone.milestone}**: {milestone.description}" for milestone in plan.implementation_plan
+        f"- **{milestone.milestone}**: {milestone.description}"
+        for milestone in plan.implementation_plan
     )
     goals = "\n".join(f"- {goal}" for goal in plan.goals) or "- TBD"
 

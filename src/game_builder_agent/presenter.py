@@ -33,7 +33,8 @@ def show_plan(plan: GamePlan) -> None:
 
     sections: list[str] = []
     for milestone in plan.implementation_plan:
-        deliverables = "\n".join(f"- {deliverable}" for deliverable in milestone.deliverables) or "- TBD"
+        deliverable_lines = [f"- {deliverable}" for deliverable in milestone.deliverables]
+        deliverables = "\n".join(deliverable_lines) if deliverable_lines else "- TBD"
         section = (
             f"### {milestone.milestone}\n\n{milestone.description}\n\n{deliverables}\n"
         )

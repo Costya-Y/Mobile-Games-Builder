@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from rich.console import Console
 import typer
+from rich.console import Console
 
 
 class InteractionPort(Protocol):

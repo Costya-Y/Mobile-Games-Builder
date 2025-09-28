@@ -25,7 +25,9 @@ class Settings(BaseModel):
     )
     max_clarification_questions: Tuple[int, int] = Field(
         default=(1, 3),
-        description="Inclusive range (min, max) for clarification questions to solicit from the LLM.",
+        description=(
+            "Inclusive range (min, max) for clarification questions to solicit from the LLM."
+        ),
     )
     temperature: float = Field(
         default=0.2,

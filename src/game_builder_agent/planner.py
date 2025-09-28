@@ -16,8 +16,15 @@ class Planner:
     def __init__(self, client: ChatClient) -> None:
         self._client = client
 
-    def create_plan(self, user_prompt: str, clarifications: List[str], notes: List[str]) -> GamePlan:
-        clarifications_text = "\n".join(f"- {q}" for q in clarifications) if clarifications else "None"
+    def create_plan(
+        self,
+        user_prompt: str,
+        clarifications: List[str],
+        notes: List[str],
+    ) -> GamePlan:
+        clarifications_text = (
+            "\n".join(f"- {q}" for q in clarifications) if clarifications else "None"
+        )
         notes_text = "\n".join(f"- {n}" for n in notes) if notes else "None"
 
         messages = [
