@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in improving the Game Builder Agent!
+Thanks for your interest in improving the Game Builder!
 
 ## Getting Started
 
@@ -28,5 +28,4 @@ Thanks for your interest in improving the Game Builder Agent!
 
 ## Communication
 
-- Bug reports: open a GitHub issue.
-- Security concerns: follow the instructions in `SECURITY.md`.
+- Any Issues: open a GitHub issue.
