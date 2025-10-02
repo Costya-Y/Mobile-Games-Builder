@@ -15,6 +15,11 @@
     <main>
       <section id="prompt-section" class="card">
         <h2>1. Pitch your game</h2>
+        <div class="stage-progress">
+          <div class="progress-track">
+            <div class="progress-bar" id="prompt-progress" data-state="idle"></div>
+          </div>
+        </div>
         <form id="prompt-form">
           <label class="field">
             <span>Describe the game vision</span>
@@ -44,6 +49,11 @@
 
       <section id="clarification-section" class="card hidden">
         <h2>2. Clarify the requirements</h2>
+        <div class="stage-progress">
+          <div class="progress-track">
+            <div class="progress-bar" id="clarification-progress" data-state="idle"></div>
+          </div>
+        </div>
         <form id="clarification-form">
           <ol id="clarification-list"></ol>
           <button type="submit">Create delivery plan</button>
@@ -52,6 +62,11 @@
 
       <section id="plan-section" class="card hidden">
         <h2>3. Review the delivery plan</h2>
+        <div class="stage-progress">
+          <div class="progress-track">
+            <div class="progress-bar" id="plan-progress" data-state="idle"></div>
+          </div>
+        </div>
         <div id="acknowledgement" class="ack hidden"></div>
         <details open>
           <summary>Plan summary</summary>
@@ -71,6 +86,11 @@
 
       <section id="result-section" class="card hidden">
         <h2>4. Repository ready</h2>
+        <div class="stage-progress">
+          <div class="progress-track">
+            <div class="progress-bar" id="execution-progress" data-state="idle"></div>
+          </div>
+        </div>
         <p id="result-message"></p>
       </section>
     </main>
