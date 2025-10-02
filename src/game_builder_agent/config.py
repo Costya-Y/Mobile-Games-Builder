@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, cast
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationError
 
@@ -13,10 +13,11 @@ class Settings(BaseModel):
     """Runtime configuration loaded from environment variables."""
 
     ollama_base_url: HttpUrl = Field(
-        default="http://localhost:11434", description="Base URL where the Ollama HTTP API lives."
+        default=cast(HttpUrl, "http://localhost:11434"),
+        description="Base URL where the Ollama HTTP API lives.",
     )
     ollama_model: str = Field(
-        default="llama3",
+        default="gpt-oss:latest",
         description="The Ollama model identifier to use for planning and generation steps.",
     )
     output_root: Path = Field(
@@ -38,6 +39,10 @@ class Settings(BaseModel):
     dry_run: bool = Field(
         default=False,
         description="If true, the agent will produce plans but skip repository materialization.",
+    )
+    available_models: Tuple[str, ...] = Field(
+        default=("gpt-oss:latest", "llama-3", "mixtral"),
+        description="LLM model identifiers exposed to the web UI for selection.",
     )
 
     model_config = ConfigDict(arbitrary_types_allowed=True, frozen=True)
@@ -73,6 +78,8 @@ def load_settings() -> Settings:
             pass
     dry_run = parse_bool(env.get("AGENT_DRY_RUN"), default=False)
     overrides["dry_run"] = dry_run
+    if models := env.get("AGENT_AVAILABLE_MODELS"):
+        overrides["available_models"] = tuple(m.strip() for m in models.split(",") if m.strip())
 
     try:
         return Settings(**overrides)

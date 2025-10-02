@@ -1,5 +1,7 @@
 const promptForm = document.getElementById("prompt-form");
 const promptInput = document.getElementById("prompt-input");
+const modelSelect = document.getElementById("model-select");
+const gamePathInput = document.getElementById("game-path-input");
 const clarificationSection = document.getElementById("clarification-section");
 const clarificationForm = document.getElementById("clarification-form");
 const clarificationList = document.getElementById("clarification-list");
@@ -13,6 +15,8 @@ const resultSection = document.getElementById("result-section");
 const resultMessage = document.getElementById("result-message");
 
 let sessionId = null;
+let selectedModel = null;
+let selectedGamePath = null;
 
 function hide(el) {
   el.classList.add("hidden");
@@ -83,7 +87,13 @@ promptForm.addEventListener("submit", async (event) => {
   updateAcknowledgement(null);
 
   try {
-    const data = await postJSON("/api/sessions", { prompt: promptInput.value });
+    selectedModel = modelSelect.value;
+    selectedGamePath = gamePathInput.value;
+    const data = await postJSON("/api/sessions", {
+      prompt: promptInput.value,
+      model: selectedModel,
+      game_path: selectedGamePath
+    });
     sessionId = data.session_id;
     renderClarifications(data.clarifications);
     show(clarificationSection);

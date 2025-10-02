@@ -27,11 +27,23 @@ def run(
         "--output-dir",
         help="Override the base directory where generated repositories will be created.",
     ),
+    model: Optional[str] = typer.Option(
+        None,
+        "--model",
+        help="Override the Ollama model identifier used for every LLM interaction.",
+    ),
     dry_run: bool = typer.Option(False, help="Plan only; skip repository scaffolding."),
 ) -> None:
     """Execute the agent end-to-end."""
 
     settings = load_settings()
+    if model is not None:
+        if settings.available_models and model not in settings.available_models:
+            console.print(
+                f"[bold red]Model '{model}' is not allowed. Choose from: {', '.join(settings.available_models)}"
+            )
+            raise typer.Exit(code=2)
+        settings = settings.model_copy(update={"ollama_model": model})
     if output_dir is not None:
         settings = settings.model_copy(update={"output_root": output_dir})
     if dry_run:

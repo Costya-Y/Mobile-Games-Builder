@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from game_builder_agent.schemas import GamePlan
@@ -20,6 +21,8 @@ class SessionState:
     plan: Optional[GamePlan] = None
     repo_path: Optional[str] = None
     status: str = "awaiting_clarifications"
+    selected_model: Optional[str] = None
+    output_path: Optional[Path] = None
 
 
 class SessionStore:
@@ -28,9 +31,22 @@ class SessionStore:
     def __init__(self) -> None:
         self._sessions: Dict[str, SessionState] = {}
 
-    def create(self, prompt: str, clarifications: List[str]) -> SessionState:
+    def create(
+        self,
+        prompt: str,
+        clarifications: List[str],
+        *,
+        model: Optional[str] = None,
+        output_path: Optional[Path] = None,
+    ) -> SessionState:
         session_id = uuid.uuid4().hex
-        state = SessionState(session_id=session_id, prompt=prompt, clarifications=clarifications)
+        state = SessionState(
+            session_id=session_id,
+            prompt=prompt,
+            clarifications=clarifications,
+            selected_model=model,
+            output_path=output_path,
+        )
         self._sessions[session_id] = state
         return state
 

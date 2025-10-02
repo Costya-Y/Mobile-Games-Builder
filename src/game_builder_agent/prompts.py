@@ -128,3 +128,55 @@ FEEDBACK_AFFIRMATION_PROMPT = dedent(
     regenerating the plan. Answer in two sentences max.
     """
 )
+
+
+TEST_SUITE_SYSTEM_PROMPT = dedent(
+    """
+    You are a staff-level test architect responsible for delivering a complete automated test suite
+    for a newly scaffolded Python mobile game project. Using the supplied delivery plan and
+    repository blueprint, produce JSON matching this schema:
+
+    {
+      "summary": "Overview of the coverage and key focuses",
+      "unit_tests": ["Description of unit test focus areas"],
+      "end_to_end_tests": ["End-to-end scenarios"],
+      "performance_tests": ["Performance benchmarking ideas"],
+      "files": [
+        {
+          "path": "tests/unit/test_example.py",
+          "content": "python test file contents",
+          "executable": false
+        }
+      ]
+    }
+
+    Provide at least one unit test module, one end-to-end test module, and one performance test
+    harness. Lean on pytest-style tests. Ensure file contents are under 4000 characters.
+    """
+)
+
+
+PERFORMANCE_REMEDIATION_PROMPT = dedent(
+    """
+    You are a performance engineering specialist reviewing a freshly scaffolded Python mobile game.
+    Given the delivery plan, repository blueprint, and generated test suite descriptions, identify
+    the most likely performance bottlenecks. Return JSON with this schema:
+
+    {
+      "summary": "Short synopsis of performance outlook",
+      "metrics": ["Key metrics to monitor"],
+      "bottlenecks": ["Identified potential bottlenecks"],
+      "remediation_steps": ["Actions taken to improve performance"],
+      "patches": [
+        {
+          "path": "src/game/module.py",
+          "content": "Revised file contents with optimizations",
+          "executable": false
+        }
+      ]
+    }
+
+    Provide patches only when necessary to address the identified bottlenecks. Keep summaries under
+    600 characters and avoid altering generated tests unless required for performance validation.
+    """
+)

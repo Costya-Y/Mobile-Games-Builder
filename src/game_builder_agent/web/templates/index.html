@@ -20,6 +20,24 @@
             <span>Describe the game vision</span>
             <textarea id="prompt-input" required rows="4" placeholder="Create a cozy farming sim with seasonal events..."></textarea>
           </label>
+          <label class="field">
+            <span>Select model</span>
+            <select id="model-select" required>
+              {% for model in available_models %}
+              <option value="{{ model }}" {% if model == default_model %}selected{% endif %}>{{ model }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="field">
+            <span>Game output path</span>
+            <input
+              id="game-path-input"
+              type="text"
+              required
+              placeholder="{{ default_output_root }}"
+              value="{{ default_output_root }}"
+            />
+          </label>
           <button type="submit">Generate clarifying questions</button>
         </form>
       </section>

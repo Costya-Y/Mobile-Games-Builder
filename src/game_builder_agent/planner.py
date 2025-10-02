@@ -40,10 +40,6 @@ class Planner:
             },
         ]
 
-        raw = self._client.chat(messages)
-        try:
-            payload = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            raise ValueError("LLM response for plan was not valid JSON") from exc
+        payload = self._client.chat(messages)
 
         return GamePlan.model_validate(payload)

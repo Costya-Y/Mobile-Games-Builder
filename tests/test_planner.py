@@ -1,6 +1,5 @@
 """Tests for the planning workflow."""
 
-import json
 from typing import Any, Iterable, Mapping
 
 from game_builder_agent.planner import Planner
@@ -10,8 +9,8 @@ class FakeClient:
     def __init__(self, payload: Mapping[str, Any]) -> None:
         self._payload = payload
 
-    def chat(self, messages: Iterable[Mapping[str, str]], *, temperature=None) -> str:
-        return json.dumps(self._payload)
+    def chat(self, messages: Iterable[Mapping[str, str]], *, temperature=None):
+        return self._payload
 
 
 def test_planner_parses_game_plan() -> None:

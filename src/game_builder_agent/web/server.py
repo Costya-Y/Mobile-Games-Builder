@@ -37,6 +37,8 @@ def get_session_store() -> SessionStore:
 
 class SessionCreate(BaseModel):
     prompt: str
+    model: str
+    game_path: str
 
 
 class AnswerPayload(BaseModel):
@@ -57,6 +59,8 @@ class SessionResponse(BaseModel):
     plan: Optional[GamePlan]
     repo_path: Optional[str]
     status: str
+    model: Optional[str]
+    game_path: Optional[str]
 
 
 class ExecuteResponse(BaseModel):
@@ -74,7 +78,25 @@ def _serialize(session: SessionState) -> SessionResponse:
         plan=session.plan,
         repo_path=session.repo_path,
         status=session.status,
+        model=session.selected_model,
+        game_path=str(session.output_path) if session.output_path else None,
     )
+
+
+def _with_session_overrides(
+    settings: Settings,
+    *,
+    model: Optional[str] = None,
+    output_root: Optional[Path] = None,
+) -> Settings:
+    updates: dict[str, object] = {}
+    if model and model != settings.ollama_model:
+        updates["ollama_model"] = model
+    if output_root and output_root != settings.output_root:
+        updates["output_root"] = output_root
+    if not updates:
+        return settings
+    return settings.model_copy(update=updates)
 
 
 def _answer_questions(clarifications: List[str], answers: Iterable[str]) -> List[str]:
@@ -138,8 +160,16 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+def home(request: Request, settings: Settings = Depends(get_settings)):
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "available_models": settings.available_models,
+            "default_model": settings.ollama_model,
+            "default_output_root": str(settings.output_root),
+        },
+    )
 
 
 @app.post("/api/sessions", response_model=SessionResponse)
@@ -148,8 +178,26 @@ def create_session(
     settings: Settings = Depends(get_settings),
     store: SessionStore = Depends(get_session_store),
 ) -> SessionResponse:
-    clarifications = _generate_clarifications(settings, payload.prompt)
-    session = store.create(prompt=payload.prompt.strip(), clarifications=clarifications)
+    prompt = payload.prompt.strip()
+    model = payload.model.strip()
+    if settings.available_models and model not in settings.available_models:
+        raise HTTPException(status_code=400, detail="Model not allowed")
+
+    try:
+        output_path = Path(payload.game_path).expanduser()
+        output_path.mkdir(parents=True, exist_ok=True)
+        output_path = output_path.resolve()
+    except Exception as exc:  # pragma: no cover - defensive guard
+        raise HTTPException(status_code=400, detail="Invalid output path") from exc
+
+    session_settings = _with_session_overrides(settings, model=model, output_root=output_path)
+    clarifications = _generate_clarifications(session_settings, prompt)
+    session = store.create(
+        prompt=prompt,
+        clarifications=clarifications,
+        model=model,
+        output_path=output_path,
+    )
     return _serialize(session)
 
 
@@ -180,8 +228,13 @@ def submit_answers(
         )
 
     session.answered = _answer_questions(session.clarifications, payload.answers)
-    session.plan = _generate_plan(
+    session_settings = _with_session_overrides(
         settings,
+        model=session.selected_model,
+        output_root=session.output_path,
+    )
+    session.plan = _generate_plan(
+        session_settings,
         session.prompt,
         session.clarifications,
         session.answered,
@@ -207,13 +260,18 @@ def request_revision(
         )
 
     session.notes.extend(note.strip() for note in payload.notes if note.strip())
-    acknowledgement = _summarize_feedback(
+    session_settings = _with_session_overrides(
         settings,
+        model=session.selected_model,
+        output_root=session.output_path,
+    )
+    acknowledgement = _summarize_feedback(
+        session_settings,
         session.notes[-len(payload.notes) :],
     )
     session.last_acknowledgement = acknowledgement
     session.plan = _generate_plan(
-        settings,
+        session_settings,
         session.prompt,
         session.clarifications,
         session.answered,
@@ -237,7 +295,16 @@ def approve_plan(
     session.status = "executing"
     store.update(session)
 
-    repo_path = _execute_plan(settings, session.plan, session.notes or ["Plan approved via web UI"])
+    session_settings = _with_session_overrides(
+        settings,
+        model=session.selected_model,
+        output_root=session.output_path,
+    )
+    repo_path = _execute_plan(
+        session_settings,
+        session.plan,
+        session.notes or ["Plan approved via web UI"],
+    )
     session.repo_path = repo_path
     session.status = "completed"
     store.update(session)

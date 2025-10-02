@@ -59,7 +59,7 @@ def sample_plan() -> GamePlan:
     )
 
 
-def test_web_flow(monkeypatch) -> None:
+def test_web_flow(monkeypatch, tmp_path) -> None:
     clarifications = ["What is the art style?", "Preferred monetization?"]
     plan = sample_plan()
 
@@ -70,11 +70,21 @@ def test_web_flow(monkeypatch) -> None:
 
     client = TestClient(server.app)
 
-    create_resp = client.post("/api/sessions", json={"prompt": "Runner"})
+    game_root = tmp_path / "games"
+    create_resp = client.post(
+        "/api/sessions",
+        json={
+            "prompt": "Runner",
+            "model": "gpt-oss:latest",
+            "game_path": str(game_root),
+        },
+    )
     assert create_resp.status_code == 200
     payload = create_resp.json()
     session_id = payload["session_id"]
     assert payload["clarifications"] == clarifications
+    assert payload["model"] == "gpt-oss:latest"
+    assert payload["game_path"] == str(game_root.resolve())
 
     answers_resp = client.post(
         f"/api/sessions/{session_id}/answers",

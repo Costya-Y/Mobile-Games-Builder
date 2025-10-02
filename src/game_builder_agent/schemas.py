@@ -79,3 +79,19 @@ class RepoBlueprint(BaseModel):
 class FeedbackSummary(BaseModel):
     acknowledgement: str
     next_steps: Optional[str] = None
+
+
+class TestSuite(BaseModel):
+    summary: str
+    unit_tests: List[str] = Field(default_factory=list)
+    end_to_end_tests: List[str] = Field(default_factory=list)
+    performance_tests: List[str] = Field(default_factory=list)
+    files: List[FileArtifact] = Field(default_factory=list)
+
+
+class PerformanceReport(BaseModel):
+    summary: str
+    metrics: List[str] = Field(default_factory=list)
+    bottlenecks: List[str] = Field(default_factory=list)
+    remediation_steps: List[str] = Field(default_factory=list)
+    patches: List[FileArtifact] = Field(default_factory=list)

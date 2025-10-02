@@ -7,13 +7,18 @@ import os
 from pathlib import Path
 from typing import Iterable, List
 
+from pydantic import ValidationError
 from rich.console import Console
 from rich.table import Table
 
 from .config import Settings
 from .llm_client import ChatClient, OllamaClient
-from .prompts import BLUEPRINT_SYSTEM_PROMPT
-from .schemas import FileArtifact, GamePlan, RepoBlueprint
+from .prompts import (
+    BLUEPRINT_SYSTEM_PROMPT,
+    PERFORMANCE_REMEDIATION_PROMPT,
+    TEST_SUITE_SYSTEM_PROMPT,
+)
+from .schemas import FileArtifact, GamePlan, PerformanceReport, RepoBlueprint, TestSuite
 
 console = Console()
 
@@ -44,13 +49,73 @@ class BlueprintBuilder:
             },
         ]
 
-        raw = self._client.chat(messages)
-        try:
-            payload = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            raise ExecutionError("LLM blueprint response was not valid JSON") from exc
+        payload = self._client.chat(messages)
+        # try:
+        #     payload = json.loads(raw)
+        # except json.JSONDecodeError as exc:
+        #     raise ExecutionError("LLM blueprint response was not valid JSON") from exc
 
         return RepoBlueprint.model_validate(payload)
+
+
+class TestSuiteBuilder:
+    def __init__(self, client: ChatClient) -> None:
+        self._client = client
+
+    def create_suite(
+        self,
+        plan: GamePlan,
+        blueprint: RepoBlueprint,
+        reviewer_notes: Iterable[str],
+    ) -> TestSuite:
+        context = {
+            "plan": plan.model_dump(mode="json"),
+            "blueprint": blueprint.model_dump(mode="json"),
+            "operator_notes": list(reviewer_notes),
+        }
+        messages = [
+            {"role": "system", "content": TEST_SUITE_SYSTEM_PROMPT},
+            {
+                "role": "user",
+                "content": json.dumps(context, indent=2),
+            },
+        ]
+
+        payload = self._client.chat(messages)
+        try:
+            return TestSuite.model_validate(payload)
+        except ValidationError as exc:
+            raise ExecutionError("LLM test suite response was not valid JSON") from exc
+
+
+class PerformanceOptimizer:
+    def __init__(self, client: ChatClient) -> None:
+        self._client = client
+
+    def optimize(
+        self,
+        plan: GamePlan,
+        blueprint: RepoBlueprint,
+        test_suite: TestSuite,
+    ) -> PerformanceReport:
+        context = {
+            "plan": plan.model_dump(mode="json"),
+            "blueprint": blueprint.model_dump(mode="json"),
+            "test_suite": test_suite.model_dump(mode="json"),
+        }
+        messages = [
+            {"role": "system", "content": PERFORMANCE_REMEDIATION_PROMPT},
+            {
+                "role": "user",
+                "content": json.dumps(context, indent=2),
+            },
+        ]
+
+        payload = self._client.chat(messages)
+        try:
+            return PerformanceReport.model_validate(payload)
+        except ValidationError as exc:
+            raise ExecutionError("LLM performance report response was not valid JSON") from exc
 
 
 class FileSystemWriter:
@@ -92,6 +157,8 @@ class PlanExecutor:
         self._settings = settings
         self._client = client
         self._blueprint_builder = BlueprintBuilder(client)
+        self._test_builder = TestSuiteBuilder(client)
+        self._optimizer = PerformanceOptimizer(client)
 
     def execute(self, plan: GamePlan, *, reviewer_notes: Iterable[str]) -> Path:
         blueprint = self._blueprint_builder.create_blueprint(plan, reviewer_notes)
@@ -104,6 +171,18 @@ class PlanExecutor:
         writer.write(_merge_with_scaffolding(blueprint))
 
         _write_supporting_files(project_root, plan)
+
+        test_suite = self._test_builder.create_suite(plan, blueprint, reviewer_notes)
+        if test_suite.files:
+            writer.write(test_suite.files)
+        _write_test_overview(project_root, test_suite)
+        _display_test_summary(test_suite)
+
+        performance_report = self._optimizer.optimize(plan, blueprint, test_suite)
+        if performance_report.patches:
+            writer.write(performance_report.patches)
+        _write_performance_report(project_root, performance_report)
+        _display_performance_summary(performance_report)
 
         return project_root
 
@@ -345,3 +424,51 @@ business days.
 
 We support the latest released version. Patch releases will be provided as needed.
 """
+
+
+def _write_test_overview(project_root: Path, suite: TestSuite) -> None:
+    if not (suite.summary or suite.unit_tests or suite.end_to_end_tests or suite.performance_tests):
+        return
+
+    content = ["# Test Strategy", "", suite.summary or "Generated automated tests are attached below."]
+
+    if suite.unit_tests:
+        content.extend(["", "## Unit Tests", *[f"- {item}" for item in suite.unit_tests]])
+    if suite.end_to_end_tests:
+        content.extend(["", "## End-to-End Tests", *[f"- {item}" for item in suite.end_to_end_tests]])
+    if suite.performance_tests:
+        content.extend(["", "## Performance Tests", *[f"- {item}" for item in suite.performance_tests]])
+
+    target = project_root / "TESTING.md"
+    target.write_text("\n".join(content) + "\n", encoding="utf-8")
+
+
+def _write_performance_report(project_root: Path, report: PerformanceReport) -> None:
+    if not (report.summary or report.metrics or report.bottlenecks or report.remediation_steps):
+        return
+
+    content = ["# Performance Outlook", "", report.summary or "Performance review complete."]
+
+    if report.metrics:
+        content.extend(["", "## Metrics to Monitor", *[f"- {item}" for item in report.metrics]])
+    if report.bottlenecks:
+        content.extend(["", "## Potential Bottlenecks", *[f"- {item}" for item in report.bottlenecks]])
+    if report.remediation_steps:
+        content.extend(["", "## Remediation Steps", *[f"- {item}" for item in report.remediation_steps]])
+
+    target = project_root / "PERFORMANCE.md"
+    target.write_text("\n".join(content) + "\n", encoding="utf-8")
+
+
+def _display_test_summary(suite: TestSuite) -> None:
+    console.print("[bold cyan]Test suite generated[/bold cyan]")
+    console.print(f"Summary: {suite.summary or 'No details provided.'}")
+    console.print(
+        f"Unit: {len(suite.unit_tests)} | E2E: {len(suite.end_to_end_tests)} | Performance: {len(suite.performance_tests)}"
+    )
+
+
+def _display_performance_summary(report: PerformanceReport) -> None:
+    console.print("[bold magenta]Performance review complete[/bold magenta]")
+    console.print(f"Summary: {report.summary or 'No details provided.'}")
+    console.print(f"Patches applied: {len(report.patches)}")

@@ -28,11 +28,7 @@ class Clarifier:
             },
         ]
 
-        raw = self._client.chat(messages)
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            raise ValueError("Failed to parse clarification questions from LLM response") from exc
+        data = self._client.chat(messages)
 
         result = ClarificationResponse.model_validate(data)
         return [q.strip() for q in result.questions if q.strip()]
